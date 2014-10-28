@@ -12,6 +12,7 @@ class TileSprite: SKSpriteNode {
     
     var isBomb: Bool
     var isUnlocked: Bool
+    var isFlagged: Bool
     var row: Int
     var col: Int
 
@@ -20,6 +21,7 @@ class TileSprite: SKSpriteNode {
         self.isUnlocked = false
         self.row = 0
         self.col = 0
+        self.isFlagged = false
         
         let texture = SKTexture(imageNamed: "tile") // We initialize it with the default layout
         super.init(texture: texture, color: nil, size: texture.size())
@@ -30,6 +32,7 @@ class TileSprite: SKSpriteNode {
         self.isUnlocked = false
         self.row = row
         self.col = col
+        self.isFlagged = false
         
         let texture = SKTexture(imageNamed: "tile") // We initialize it with the default layout
         super.init(texture: texture, color: nil, size: texture.size())

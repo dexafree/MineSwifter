@@ -17,6 +17,22 @@ extension SKView {
     }
 }
 
+/* Make Int class able to generate random numbers */
+extension Int {
+    static func random(range: Range<Int> ) -> Int{
+        var offset = 0
+        
+        if range.startIndex < 0 {  // allow negative ranges
+            offset = abs(range.startIndex)
+        }
+        
+        let mini = UInt32(range.startIndex + offset)
+        let maxi = UInt32(range.endIndex   + offset)
+        
+        return Int(mini + arc4random_uniform(maxi - mini)) - offset
+    }
+}
+
 class GameScene: SKScene {
     
     enum GameState{
@@ -28,6 +44,8 @@ class GameScene: SKScene {
     /* Constant declaration */
     let ROWS: Int = 10
     let COLS: Int = 10
+    let BOMBS_NUMBER: Int = 25
+    
     
     var board: [[TileSprite]] = [[TileSprite]]()
     
@@ -75,30 +93,28 @@ class GameScene: SKScene {
      * TODO: Random generation
      */
     func fillBombs(){
-        insertBomb(0, col: 0);
-        insertBomb(0, col: 2);
-        insertBomb(1, col: 0);
-        insertBomb(1, col: 1);
-        insertBomb(2, col: 5);
-        insertBomb(2, col: 7);
-        insertBomb(3, col: 3);
-        insertBomb(3, col: 8);
-        insertBomb(3, col: 9);
-        insertBomb(4, col: 1);
-        insertBomb(4, col: 2);
-        insertBomb(5, col: 0);
-        insertBomb(5, col: 3);
-        insertBomb(5, col: 9);
-        insertBomb(6, col: 2);
-        insertBomb(6, col: 4);
-        insertBomb(7, col: 1);
-        insertBomb(7, col: 2);
-        insertBomb(7, col: 3);
-        insertBomb(8, col: 0);
-        insertBomb(8, col: 9);
-        insertBomb(9, col: 5);
-        insertBomb(9, col: 7);
-        insertBomb(9, col: 8);
+        
+        for numBombs in 0..<BOMBS_NUMBER {
+            var randomRow: Int
+            var randomCol: Int
+            
+            do {
+                randomRow = Int.random(0..<ROWS)
+                randomCol = Int.random(0..<COLS)
+            } while(board[randomRow][randomCol].isBomb)
+            
+            insertBomb(randomRow, col: randomCol)
+            
+        }
+    }
+    
+    /* Shows all the bombs in the board */
+    func showAllBombs(){
+        for row in 0..<ROWS {
+            for col in 0..<COLS {
+                if(board[row][col].isBomb) {putBomb(row, col: col)}
+            }
+        }
     }
     
     /* Inserts a bomb at a desired position */
@@ -106,8 +122,15 @@ class GameScene: SKScene {
         board[row][col].isBomb = true
     }
     
+    /* Changes the layout of a flagged tile to a normal one */
+    func removeFlag(row: Int, col: Int){
+        board[row][col].isFlagged = false
+        board[row][col].texture = SKTexture(imageNamed: "tile")
+    }
+    
     /* Changes the layout of a tile to the Flagged one */
     func putFlag(row: Int, col: Int){
+        board[row][col].isFlagged = true
         board[row][col].texture = SKTexture(imageNamed: "tile_flag")
     }
     
@@ -141,7 +164,7 @@ class GameScene: SKScene {
             
             /* If it's a bomb, set the layout of the tile to the bomb one, and mark the game as Lost */
             if board[row][col].isBomb {
-                putBomb(row, col: col)
+                showAllBombs()
                 status = GameState.LOST
             } else {
                 
@@ -220,8 +243,12 @@ class GameScene: SKScene {
             
             println("ROW: \(row) COL:\(col)")
             
-            if(status == GameState.PLAYING){
-                putFlag(row, col: col)
+            if(status == GameState.PLAYING && !board[row][col].isUnlocked){
+                if(board[row][col].isFlagged){
+                    removeFlag(row, col: col)
+                } else {
+                    putFlag(row, col: col)
+                }
             } else {
                 println("STATUS: \(status.hashValue)")
             }
@@ -248,7 +275,7 @@ class GameScene: SKScene {
             
             println("ROW: \(row) COL:\(col)")
             
-            if(status == GameState.PLAYING){
+            if(status == GameState.PLAYING && !board[row][col].isFlagged){
                 pressTile(row, col: col)
             } else {
                 println("STATUS: \(status.hashValue)")
